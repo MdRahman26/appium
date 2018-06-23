@@ -1,0 +1,63 @@
+language: node_js
+addons:
+  apt:
+    sources:
+      - ubuntu-toolchain-r-test
+    packages:
+      - g++-4.8
+env:
+  global:
+    - CXX=g++-4.8
+jobs:
+  include:
+    - stage: Legacy Bundling
+      os:
+        - linux
+          sudo: false
+      install: npm install --legacy-bundling
+      script: node . --version
+      node_js:
+        - "8"
+    - stage: Generate Docs
+      os:
+        - linux
+          sudo: false
+      script: npm run generate-docs
+      node_js:
+        - "8"
+    - stage: Tests
+      os:
+        - linux
+          sudo: false
+      script: npm run test && npm run e2e-test
+      node_js:
+        - "10"
+        - "8"
+        - "6"
+    - stage: BinTray
+      os:
+        - osx
+          osx_image: xcode9.4
+      env:
+        - NODE_ENV=production
+      install:
+        # Install prod dependencies
+        - npm install
+
+        # Install only the dev dependencies that we need
+        - npm install --only=dev gulp
+        - npm install --only=dev appium-gulp-plugins
+
+        # Build the assets
+        - npm run build
+
+        # Remove the dev depenedencies
+        - npm prune
+
+        # Zip up and upload this to bintray
+        - npm run zip-and-upload
+      script: npm run e2e-test
+      node_js:
+        - "10"
+        - "8"
+        - "6"
